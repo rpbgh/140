@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>140 Crate Browser</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --accent: #8b5cf6;
+      --muted: #9aa3b2;
+      --text: #e6e7eb;
+      --chip: #232836;
+      --chip-border: #2d3446;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .nav {
+      position: sticky; top: 0; z-index: 40;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 20px;
+      background: rgba(15,17,21,0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #1e2330;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
+    .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #06b6d4 60%);
+      box-shadow: 0 6px 18px rgba(139,92,246,.35);
+    }
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .sourcebar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      background: var(--accent); color: white; border: none; padding: 8px 12px;
+      border-radius: 10px; cursor: pointer; font-weight: 600;
+      box-shadow: 0 8px 22px rgba(139,92,246,.28);
+    }
+    .btn.secondary { background: #202636; color: var(--text); box-shadow: none; }
+    .input {
+      background: #0f1320; color: var(--text);
+      border: 1px solid #1e2330; border-radius: 10px; padding: 8px 10px;
+      outline: none; min-width: 360px;
+    }
+    .toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .toggle input { accent-color: var(--accent); }
+    input[type=file] { display: none; }
+    label.file { cursor: pointer; }
+    .status { font-size: 12px; color: var(--muted); }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--danger); }
+    .filters {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      padding: 16px; background: var(--panel); border-bottom: 1px solid #1e2330;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; color: var(--muted); }
+    select, input[type="number"], input[type="text"] {
+      background: #0f1320; color: var(--text);
+      border: 1px solid #1e2330; border-radius: 10px; padding: 10px 12px;
+      outline: none;
+    }
+    .mood-box {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 10px; background: #0f1320; border: 1px solid #1e2330; border-radius: 10px;
+      max-height: 90px; overflow: auto;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 999px; border: 1px solid var(--chip-border);
+      background: var(--chip); font-size: 12px; cursor: pointer; user-select: none;
+    }
+    .chip input { appearance: none; width: 14px; height: 14px; border: 1px solid #3a4255; border-radius: 3px; display: inline-block; }
+    .chip input:checked { background: var(--accent); border-color: var(--accent); }
+    .actions { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .wrap { padding: 18px; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; }
+    thead { background: #101522; position: sticky; top: 196px; z-index: 30; }
+    th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #1e2330; vertical-align: top; }
+    tbody tr:hover { background: rgba(139,92,246,0.06); }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable::after { content: attr(data-sort-indicator); margin-left: 8px; font-size: 12px; color: var(--muted); }
+    .pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #1b2030; border: 1px solid #283148; display: inline-block; }
+    .muted { color: var(--muted); }
+    .hidden-col { display: none; }
+    .footer { color: var(--muted); font-size: 12px; padding: 18px; text-align: center; }
+    @media (max-width: 900px) {
+      .nav { grid-template-columns: 1fr; }
+      .input { min-width: 220px; width: 100%; }
+      thead { top: 246px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>140 Crate Browser</div>
+    </div>
+    <div class="sourcebar">
+      <input id="dataUrl" class="input" type="url" placeholder="Paste Published CSV URL (Google Sheets / Airtable)" />
+      <button id="saveUrl" class="btn secondary">Save URL</button>
+      <button id="loadUrl" class="btn">Load from URL</button>
+      <span id="status" class="status"></span>
+    </div>
+    <div class="toolbar">
+      <label for="csvInput" class="btn secondary file">Import CSV</label>
+      <input id="csvInput" type="file" accept=".csv" />
+      <button id="exportBtn" class="btn">Export CSV</button>
+      <button id="pasteCsvBtn" class="btn secondary">Paste CSV</button>
+      <label class="toggle">
+        <input type="checkbox" id="toggleMood" />
+        Show Mood column
+      </label>
+    </div>
+  </nav>
+
+  <section class="filters" id="filters">
+    <div class="filter-group">
+      <label for="playlist">Playlist</label>
+      <select id="playlist">
+        <option value="">All</option>
+        <option>Rollers</option>
+        <option>Wobblers</option>
+        <option>Steppers</option>
+        <option>Weapons</option>
+        <option>Atmospherics</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Energy (min–max)</label>
+      <div style="display:flex; gap:10px;">
+        <select id="energyMin">
+          <option value="">Min</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+        <select id="energyMax">
+          <option value="">Max</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-group" style="grid-column: 1 / -1;">
+      <label>Mood</label>
+      <div class="mood-box" id="moodBox">
+        <label class="chip"><input type="checkbox" value="Dark">Dark</label>
+        <label class="chip"><input type="checkbox" value="Hypnotic">Hypnotic</label>
+        <label class="chip"><input type="checkbox" value="Meditative">Meditative</label>
+        <label class="chip"><input type="checkbox" value="Dubwise">Dubwise</label>
+        <label class="chip"><input type="checkbox" value="Cinematic">Cinematic</label>
+        <label class="chip"><input type="checkbox" value="Swaggering">Swaggering</label>
+        <label class="chip"><input type="checkbox" value="Aggressive">Aggressive</label>
+        <label class="chip"><input type="checkbox" value="Skanky">Skanky</label>
+        <label class="chip"><input type="checkbox" value="Tense">Tense</label>
+        <label class="chip"><input type="checkbox" value="Deep">Deep</label>
+        <label class="chip"><input type="checkbox" value="Minimal">Minimal</label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="apply">Apply Filters</button>
+      <button class="btn secondary" id="reset">Reset</button>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <table id="tracks">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="name">Track Name</th>
+          <th class="sortable" data-key="artist">Artist</th>
+          <th class="sortable" data-key="energy">Energy</th>
+          <th class="sortable" data-key="stage">Stage</th>
+          <th class="sortable" data-key="playlist">Playlist</th>
+          <th class="sortable" data-key="other">Other Compatible Playlists</th>
+          <th class="sortable" data-key="mood">Mood</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-energy="3" data-playlist="Rollers" data-moods="Hypnotic,Deep,Minimal">
+          <td>Sensations</td>
+          <td>Casey Club</td>
+          <td><span class="pill">3</span></td>
+          <td>Builder</td>
+          <td><span class="pill">Rollers</span></td>
+          <td class="muted">Steppers, Atmospherics</td>
+          <td class="muted mood-cell">Hypnotic, Deep, Minimal</td>
+        </tr>
+        <tr data-energy="4" data-playlist="Wobblers" data-moods="Dark,Swaggering,Skanky">
+          <td>Like That</td>
+          <td>Dad140</td>
+          <td><span class="pill">4</span></td>
+          <td>Driver</td>
+          <td><span class="pill">Wobblers</span></td>
+          <td class="muted">Steppers, Weapons</td>
+          <td class="muted mood-cell">Dark, Swaggering, Skanky</td>
+        </tr>
+        <tr data-energy="5" data-playlist="Weapons" data-moods="Aggressive,Dark,Tense,Cinematic">
+          <td>Horror Show Style (HØST Remix)</td>
+          <td>Flowdan</td>
+          <td><span class="pill">5</span></td>
+          <td>Peak</td>
+          <td><span class="pill">Weapons</span></td>
+          <td class="muted">Wobblers</td>
+          <td class="muted mood-cell">Aggressive, Dark, Tense, Cinematic</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <div class="footer">
+    • Import/Export CSV columns: <strong>Track Name, Artist, Energy, Stage, Playlist, Other Compatible Playlists, Mood</strong>.
+  </div>
+  <div class="footer" style="margin-top:-10px">
+    If "Load failed: Failed to fetch" appears, it's usually CORS when opening this file locally.
+    Quick fixes: host this HTML on GitHub Pages/Netlify, or use the new <strong>Paste CSV</strong> button.
+  </div>
+
+<script>
+(function(){
+  const qs = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  const playlistSel = qs('#playlist');
+  const energyMinSel = qs('#energyMin');
+  const energyMaxSel = qs('#energyMax');
+  const moodChecks = qsa('#moodBox input[type="checkbox"]');
+  const applyBtn = qs('#apply');
+  const resetBtn = qs('#reset');
+  const rowsContainer = qs('#tracks tbody');
+  const toggleMood = qs('#toggleMood');
+  const csvInput = qs('#csvInput');
+  const exportBtn = qs('#exportBtn');
+  const headerCells = qsa('thead th.sortable');
+  const dataUrlInput = qs('#dataUrl');
+  const saveUrlBtn = qs('#saveUrl');
+  const loadUrlBtn = qs('#loadUrl');
+  const statusEl = qs('#status');
+
+  const CSV_HEADERS = ['Track Name','Artist','Energy','Stage','Playlist','Other Compatible Playlists','Mood'];
+  const LS_KEY_URL = 'crate_data_url';
+  const LS_KEY_SORT = 'crate_sort_state';
+  const LS_KEY_MOOD_VIS = 'crate_mood_visible';
+
+  let moodVisible = JSON.parse(localStorage.getItem(LS_KEY_MOOD_VIS) || 'false');
+  setMoodVisibility(moodVisible);
+  toggleMood.checked = moodVisible;
+  toggleMood.addEventListener('change', (e)=> {
+    setMoodVisibility(e.target.checked);
+    localStorage.setItem(LS_KEY_MOOD_VIS, JSON.stringify(e.target.checked));
+  });
+
+  function setMoodVisibility(show){
+    const idx = getColumnIndexByKey('mood');
+    if (idx === -1) return;
+    const th = qsa('thead th')[idx];
+    th.style.display = show ? '' : 'none';
+    qsa('tbody tr').forEach(tr => {
+      const td = tr.children[idx];
+      if (td) td.style.display = show ? '' : 'none';
+    });
+  }
+
+  function applyFilters(){
+    const playlist = playlistSel.value.trim();
+    const minE = parseInt(energyMinSel.value || '0', 10);
+    const maxE = parseInt(energyMaxSel.value || '6', 10);
+    const selectedMoods = moodChecks.filter(c => c.checked).map(c => c.value.toLowerCase());
+
+    qsa('#tracks tbody tr').forEach(row => {
+      const rPlaylist = (row.getAttribute('data-playlist') || '').toLowerCase();
+      const rEnergy = parseInt(row.getAttribute('data-energy') || '0', 10);
+      const rMoods = (row.getAttribute('data-moods') || '').toLowerCase();
+
+      let visible = true;
+      if (playlist && rPlaylist !== playlist.toLowerCase()) visible = false;
+      if (!isNaN(minE) && rEnergy < minE) visible = false;
+      if (!isNaN(maxE) && rEnergy > maxE) visible = false;
+      if (selectedMoods.length){
+        for (const m of selectedMoods){
+          if (!rMoods.includes(m)) { visible = false; break; }
+        }
+      }
+      row.style.display = visible ? '' : 'none';
+    });
+  }
+
+  function resetFilters(){
+    playlistSel.value = '';
+    energyMinSel.value = '';
+    energyMaxSel.value = '';
+    moodChecks.forEach(c => c.checked = false);
+    applyFilters();
+  }
+
+  applyBtn.addEventListener('click', applyFilters);
+  resetBtn.addEventListener('click', resetFilters);
+  applyFilters();
+
+  let sortState = JSON.parse(localStorage.getItem(LS_KEY_SORT) || '{"key":null,"dir":1}');
+  headerCells.forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-key');
+      if (sortState.key === key) sortState.dir *= -1; else { sortState.key = key; sortState.dir = 1; }
+      localStorage.setItem(LS_KEY_SORT, JSON.stringify(sortState));
+      headerCells.forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
+      sortTableByKey(key, sortState.dir);
+    });
+  });
+  if (sortState.key){
+    headerCells.forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === sortState.key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
+    sortTableByKey(sortState.key, sortState.dir);
+  }
+
+  function getColumnIndexByKey(key){
+    const heads = qsa('thead th');
+    for (let i = 0; i < heads.length; i++){
+      if (heads[i].getAttribute('data-key') === key) return i;
+    }
+    return -1;
+  }
+
+  function sortTableByKey(key, dir){
+    const idx = getColumnIndexByKey(key);
+    if (idx === -1) return;
+    const rows = qsa('tbody tr');
+    const sorted = rows.sort((a,b) => {
+      const av = getCellComparable(a, idx, key);
+      const bv = getCellComparable(b, idx, key);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    sorted.forEach(r => rowsContainer.appendChild(r));
+  }
+
+  function getCellComparable(tr, idx, key){
+    let val = tr.children[idx]?.textContent?.trim() ?? '';
+    if (key === 'energy'){
+      const n = parseFloat(val);
+      return isNaN(n) ? -Infinity : n;
+    }
+    return val.toLowerCase();
+  }
+
+  exportBtn.addEventListener('click', () => {
+    const rows = qsa('#tracks tbody tr');
+    const lines = [];
+    lines.push(CSV_HEADERS.join(','));
+    rows.forEach(tr => {
+      const cells = qsa('td', tr);
+      const rowVals = CSV_HEADERS.map((h, i) => (cells[i]?.textContent ?? '').trim());
+      lines.push(rowVals.map(csvEscape).join(','));
+    });
+    const blob = new Blob([lines.join('\r\n')], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '140_crate.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  csvInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const data = parseCSV(text);
+    if (!data.length) return;
+    const header = data[0].map(s => s.trim());
+    const expected = CSV_HEADERS;
+    const valid = expected.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
+    const startIdx = valid ? 1 : 0;
+    loadRowsFromCSVArray(data.slice(startIdx));
+    csvInput.value = '';
+  });
+
+  function loadRowsFromCSVArray(rows){
+    rowsContainer.innerHTML = '';
+    rows.forEach(row => {
+      if (!row || !row.length) return;
+      const [name, artist, energy, stage, playlist, other, mood] = row;
+      addRow({ name: name||'', artist: artist||'', energy: (energy||'').replace(/\D/g,'')||'', stage: stage||'', playlist: playlist||'', other: other||'', mood: mood||'' });
+    });
+    applyFilters();
+    if (sortState.key) sortTableByKey(sortState.key, sortState.dir);
+  }
+
+  function addRow({name, artist, energy, stage, playlist, other, mood}){
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-energy', String(energy || ''));
+    tr.setAttribute('data-playlist', String(playlist || ''));
+    tr.setAttribute('data-moods', String(mood || ''));
+    tr.innerHTML = `
+      <td>${escapeHTML(name)}</td>
+      <td>${escapeHTML(artist)}</td>
+      <td><span class="pill">${escapeHTML(String(energy || ''))}</span></td>
+      <td>${escapeHTML(stage)}</td>
+      <td><span class="pill">${escapeHTML(playlist)}</span></td>
+      <td class="muted">${escapeHTML(other)}</td>
+      <td class="muted mood-cell">${escapeHTML(mood)}</td>
+    `;
+    rowsContainer.appendChild(tr);
+    const idx = getColumnIndexByKey('mood');
+    if (idx !== -1) {
+      const td = tr.children[idx];
+      if (td) td.style.display = toggleMood.checked ? '' : 'none';
+    }
+  }
+
+  function csvEscape(s){
+    s = String(s ?? '');
+    if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function parseCSV(text){
+    const rows = [];
+    let i = 0, field = '', row = [], inQuotes = false;
+    while (i < text.length){
+      const c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        } else { field += c; i++; continue; }
+      } else {
+        if (c === '"'){ inQuotes = true; i++; continue; }
+        if (c === ','){ row.push(field); field = ''; i++; continue; }
+        if (c === '\r'){ i++; continue; }
+        if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+        field += c; i++; continue;
+      }
+    }
+    row.push(field); rows.push(row);
+    return rows.filter(r => r.some(cell => String(cell).trim().length));
+  }
+
+  function escapeHTML(str){
+    const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'};
+    return String(str).replace(/[&<>"']/g, ch => map[ch]);
+  }
+
+  // Load from URL
+  const LS = window.localStorage;
+  try {
+    const savedUrl = LS.getItem(LS_KEY_URL) || '';
+    if (savedUrl) dataUrlInput.value = savedUrl;
+    if (savedUrl) fetchCSV(savedUrl);
+  } catch(e){ console.warn('localStorage not available', e); }
+
+  saveUrlBtn.addEventListener('click', () => {
+    const url = dataUrlInput.value.trim();
+    if (!url) return setStatus('Enter a CSV URL first', true);
+    try { LS.setItem(LS_KEY_URL, url); setStatus('URL saved', false); }
+    catch(e){ setStatus('Could not save URL (storage blocked)', true); }
+  });
+
+  loadUrlBtn.addEventListener('click', () => {
+    const url = (dataUrlInput.value || '').trim() || (LS.getItem(LS_KEY_URL) || '');
+    if (!url) return setStatus('No URL set', true);
+    fetchCSV(url);
+  });
+
+  async function fetchCSV(url){
+    try {
+      setStatus('Loading…');
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const text = await resp.text();
+      const data = parseCSV(text);
+      if (!data.length) throw new Error('No data');
+      const header = data[0].map(s => s.trim());
+      const expected = CSV_HEADERS;
+      const valid = expected.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
+      const startIdx = valid ? 1 : 0;
+      loadRowsFromCSVArray(data.slice(startIdx));
+      setStatus('Loaded ✓', false);
+    } catch (e){
+      console.error(e);
+      setStatus('Load failed: ' + (e.message || e), true);
+    }
+  }
+
+  function setStatus(msg, isError){
+    statusEl.textContent = msg || '';
+    statusEl.className = 'status ' + (isError ? 'err' : 'ok');
+  }
+})();
+</script>
+</body>
+</html>
