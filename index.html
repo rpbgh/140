@@ -19,10 +19,8 @@
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    .nav { position: sticky; top: 0; z-index: 40; display: grid;
-      grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
-      padding: 14px 20px; background: rgba(15,17,21,0.85); backdrop-filter: blur(8px);
-      border-bottom: 1px solid #1e2330; }
+    .nav { position: sticky; top: 0; z-index: 40; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+      padding: 14px 20px; background: rgba(15,17,21,0.85); backdrop-filter: blur(8px); border-bottom: 1px solid #1e2330; }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
     .logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #06b6d4 60%);
       box-shadow: 0 6px 18px rgba(139,92,246,.35); }
@@ -37,7 +35,8 @@
     input[type=file] { display: none; } label.file { cursor: pointer; }
     .status { font-size: 12px; color: var(--muted); } .status.ok { color: var(--success); } .status.err { color: var(--danger); }
     .filters { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); padding: 16px; background: var(--panel); border-bottom: 1px solid #1e2330; }
-    .filter-group { display: flex; flex-direction: column; gap: 6px; } label { font-size: 12px; color: var(--muted); }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; color: var(--muted); }
     select, input[type="number"], input[type="text"] { background: #0f1320; color: var(--text); border: 1px solid #1e2330; border-radius: 10px; padding: 10px 12px; outline: none; }
     .mood-box { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: #0f1320; border: 1px solid #1e2330; border-radius: 10px; max-height: 90px; overflow: auto; }
     .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--chip-border); background: var(--chip); font-size: 12px; cursor: pointer; user-select: none; }
@@ -51,12 +50,11 @@
     tbody tr:hover { background: rgba(139,92,246,0.06); }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable::after { content: attr(data-sort-indicator); margin-left: 8px; font-size: 12px; color: var(--muted); }
-    .handle{opacity:.5; margin-right:8px; cursor:grab;} .handle:active{cursor:grabbing;}
     .pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #1b2030; border: 1px solid #283148; display: inline-block; }
     .muted { color: var(--muted); }
     .hidden-col { display: none; }
     .footer { color: var(--muted); font-size: 12px; padding: 18px; text-align: center; }
-    @media (max-width: 900px) { .nav { grid-template-columns: 1fr; } .input { min-width: 220px; width: 100%; } thead { top: 0px; } }
+    @media (max-width: 900px) { .nav { grid-template-columns: 1fr; } .input { min-width: 220px; width: 100%; } }
   </style>
 </head>
 <body>
@@ -85,24 +83,32 @@
       <label for="playlist">Playlist</label>
       <select id="playlist">
         <option value="">All</option>
-        <option>Rollers</option>
-        <option>Wobblers</option>
-        <option>Steppers</option>
-        <option>Weapons</option>
-        <option>Atmospherics</option>
+        <option>Rollers</option><option>Wobblers</option><option>Steppers</option><option>Weapons</option><option>Atmospherics</option>
       </select>
     </div>
     <div class="filter-group">
       <label>Energy (min–max)</label>
       <div style="display:flex; gap:10px;">
         <select id="energyMin">
-          <option value="">Min</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option value="">Min</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
         </select>
         <select id="energyMax">
-          <option value="">Max</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option value="">Max</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
         </select>
       </div>
     </div>
+
+    <div class="filter-group">
+      <label for="minimalFilter">Minimal Filter</label>
+      <select id="minimalFilter">
+        <option value="">All</option>
+        <option value="only">Only Minimal</option>
+        <option value="exclude">Exclude Minimal</option>
+      </select>
+    </div>
+
     <div class="filter-group" style="grid-column: 1 / -1;">
       <label>Mood</label>
       <div class="mood-box" id="moodBox">
@@ -129,32 +135,55 @@
     <table id="tracks">
       <thead>
         <tr>
-          <th class="sortable" data-key="name" draggable="true"><span class="handle">☰</span> Track Name</th>
-          <th class="sortable" data-key="artist" draggable="true"><span class="handle">☰</span> Artist</th>
-          <th class="sortable" data-key="energy" draggable="true"><span class="handle">☰</span> Energy</th>
-          <th class="sortable" data-key="stage" draggable="true"><span class="handle">☰</span> Stage</th>
-          <th class="sortable" data-key="playlist" draggable="true"><span class="handle">☰</span> Playlist</th>
-          <th class="sortable" data-key="other" draggable="true"><span class="handle">☰</span> Other Compatible Playlists</th>
-          <th class="sortable" data-key="mood" draggable="true"><span class="handle">☰</span> Mood</th>
+          <th class="sortable" data-key="name">Track Name</th>
+          <th class="sortable" data-key="artist">Artist</th>
+          <th class="sortable" data-key="energy">Energy</th>
+          <th class="sortable" data-key="stage">Stage</th>
+          <th class="sortable" data-key="playlist">Playlist</th>
+          <th class="sortable" data-key="other">Other Compatible Playlists</th>
+          <th class="sortable" data-key="mood">Mood</th>
+          <th class="sortable" data-key="minimal">Minimal?</th>
         </tr>
       </thead>
       <tbody>
         <tr data-energy="3" data-playlist="Rollers" data-moods="Hypnotic,Deep,Minimal">
-          <td>Sensations</td><td>Casey Club</td><td><span class="pill">3</span></td><td>Builder</td><td><span class="pill">Rollers</span></td><td class="muted">Steppers, Atmospherics</td><td class="muted mood-cell">Hypnotic, Deep, Minimal</td>
+          <td>Sensations</td>
+          <td>Casey Club</td>
+          <td><span class="pill">3</span></td>
+          <td>Builder</td>
+          <td><span class="pill">Rollers</span></td>
+          <td class="muted">Steppers, Atmospherics</td>
+          <td class="muted mood-cell">Hypnotic, Deep, Minimal</td>
+          <td class="muted minimal-flag"></td>
         </tr>
         <tr data-energy="4" data-playlist="Wobblers" data-moods="Dark,Swaggering,Skanky">
-          <td>Like That</td><td>Dad140</td><td><span class="pill">4</span></td><td>Driver</td><td><span class="pill">Wobblers</span></td><td class="muted">Steppers, Weapons</td><td class="muted mood-cell">Dark, Swaggering, Skanky</td>
+          <td>Like That</td>
+          <td>Dad140</td>
+          <td><span class="pill">4</span></td>
+          <td>Driver</td>
+          <td><span class="pill">Wobblers</span></td>
+          <td class="muted">Steppers, Weapons</td>
+          <td class="muted mood-cell">Dark, Swaggering, Skanky</td>
+          <td class="muted minimal-flag"></td>
         </tr>
         <tr data-energy="5" data-playlist="Weapons" data-moods="Aggressive,Dark,Tense,Cinematic">
-          <td>Horror Show Style (HØST Remix)</td><td>Flowdan</td><td><span class="pill">5</span></td><td>Peak</td><td><span class="pill">Weapons</span></td><td class="muted">Wobblers</td><td class="muted mood-cell">Aggressive, Dark, Tense, Cinematic</td>
+          <td>Horror Show Style (HØST Remix)</td>
+          <td>Flowdan</td>
+          <td><span class="pill">5</span></td>
+          <td>Peak</td>
+          <td><span class="pill">Weapons</span></td>
+          <td class="muted">Wobblers</td>
+          <td class="muted mood-cell">Aggressive, Dark, Tense, Cinematic</td>
+          <td class="muted minimal-flag"></td>
         </tr>
       </tbody>
     </table>
   </main>
 
   <div class="footer">
-    • Import/Export CSV uses the **current column order**. Drag headers (☰) to reorder, it saves automatically.<br>
-    • If "Load failed: Failed to fetch" appears, it's usually CORS when opening locally. Host on GitHub/Netlify, or use **Paste CSV**.
+    • Import/Export CSV columns: <strong>Track Name, Artist, Energy, Stage, Playlist, Other Compatible Playlists, Mood</strong>.
+    • “Minimal?” is computed from the Mood field (contains “Minimal”). It’s for display/sorting only and isn’t in CSV.
+    <br/>If "Load failed: Failed to fetch" appears, it's usually CORS when opening locally. Host this file (GitHub Pages/Netlify) or use <strong>Paste CSV</strong>.
   </div>
 
 <script>
@@ -162,11 +191,12 @@
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
 
-  /* ---- Elements ---- */
+  /* Elements */
   const playlistSel = qs('#playlist');
   const energyMinSel = qs('#energyMin');
   const energyMaxSel = qs('#energyMax');
   const moodChecks = qsa('#moodBox input[type="checkbox"]');
+  const minimalSel = qs('#minimalFilter');
   const applyBtn = qs('#apply');
   const resetBtn = qs('#reset');
   const rowsContainer = qs('#tracks tbody');
@@ -174,19 +204,19 @@
   const csvInput = qs('#csvInput');
   const exportBtn = qs('#exportBtn');
   const pasteBtn = qs('#pasteCsvBtn');
+  const headerCells = qsa('thead th.sortable');
   const dataUrlInput = qs('#dataUrl');
   const saveUrlBtn = qs('#saveUrl');
   const loadUrlBtn = qs('#loadUrl');
   const statusEl = qs('#status');
 
-  /* ---- Config ---- */
+  /* Config */
   const CSV_HEADERS = ['Track Name','Artist','Energy','Stage','Playlist','Other Compatible Playlists','Mood'];
   const LS_KEY_URL = 'crate_data_url';
   const LS_KEY_SORT = 'crate_sort_state';
   const LS_KEY_MOOD_VIS = 'crate_mood_visible';
-  const LS_KEY_COL_ORDER = 'crate_col_order';
 
-  /* ---- Mood visibility ---- */
+  /* Mood column visibility */
   let moodVisible = JSON.parse(localStorage.getItem(LS_KEY_MOOD_VIS) || 'false');
   setMoodVisibility(moodVisible);
   toggleMood.checked = moodVisible;
@@ -194,14 +224,6 @@
     setMoodVisibility(e.target.checked);
     localStorage.setItem(LS_KEY_MOOD_VIS, JSON.stringify(e.target.checked));
   });
-
-  function getColumnIndexByKey(key){
-    const heads = qsa('thead th');
-    for (let i = 0; i < heads.length; i++){
-      if (heads[i].getAttribute('data-key') === key) return i;
-    }
-    return -1;
-  }
   function setMoodVisibility(show){
     const idx = getColumnIndexByKey('mood');
     if (idx === -1) return;
@@ -213,59 +235,53 @@
     });
   }
 
-  /* ---- Filters ---- */
+  /* Filters */
   function applyFilters(){
     const playlist = playlistSel.value.trim();
     const minE = parseInt(energyMinSel.value || '0', 10);
     const maxE = parseInt(energyMaxSel.value || '6', 10);
     const selectedMoods = moodChecks.filter(c => c.checked).map(c => c.value.toLowerCase());
-
+    const minimalChoice = (minimalSel && minimalSel.value) || '';
     qsa('#tracks tbody tr').forEach(row => {
       const rPlaylist = (row.getAttribute('data-playlist') || '').toLowerCase();
       const rEnergy = parseInt(row.getAttribute('data-energy') || '0', 10);
       const rMoods = (row.getAttribute('data-moods') || '').toLowerCase();
-
       let visible = true;
       if (playlist && rPlaylist !== playlist.toLowerCase()) visible = false;
       if (!isNaN(minE) && rEnergy < minE) visible = false;
       if (!isNaN(maxE) && rEnergy > maxE) visible = false;
       if (selectedMoods.length){
-        for (const m of selectedMoods){
-          if (!rMoods.includes(m)) { visible = false; break; }
-        }
+        for (const m of selectedMoods){ if (!rMoods.includes(m)) { visible = false; break; } }
       }
       row.style.display = visible ? '' : 'none';
     });
   }
-  function resetFilters(){
-    playlistSel.value = '';
-    energyMinSel.value = '';
-    energyMaxSel.value = '';
-    moodChecks.forEach(c => c.checked = false);
-    applyFilters();
-  }
-  applyBtn.addEventListener('click', applyFilters);
-  resetBtn.addEventListener('click', resetFilters);
+  function resetFilters(){ playlistSel.value = ''; energyMinSel.value = ''; energyMaxSel.value = ''; if (minimalSel) minimalSel.value = ''; moodChecks.forEach(c => c.checked = false); applyFilters(); }
+
+  applyBtn.addEventListener('click', () => { applyFilters(); updateMinimalFlags(); });
+  resetBtn.addEventListener('click', () => { resetFilters(); updateMinimalFlags(); });
   applyFilters();
 
-  /* ---- Sorting ---- */
+  /* Sorting */
   let sortState = JSON.parse(localStorage.getItem(LS_KEY_SORT) || '{"key":null,"dir":1}');
-  function headerCells(){ return qsa('thead th.sortable'); }
-  function attachHeaderSortListeners(){
-    headerCells().forEach(th => {
-      th.onclick = () => {
-        const key = th.getAttribute('data-key');
-        if (sortState.key === key) sortState.dir *= -1; else { sortState.key = key; sortState.dir = 1; }
-        localStorage.setItem(LS_KEY_SORT, JSON.stringify(sortState));
-        headerCells().forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
-        sortTableByKey(key, sortState.dir);
-      };
+  headerCells.forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-key');
+      if (sortState.key === key) sortState.dir *= -1; else { sortState.key = key; sortState.dir = 1; }
+      localStorage.setItem(LS_KEY_SORT, JSON.stringify(sortState));
+      headerCells.forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
+      sortTableByKey(key, sortState.dir);
     });
-  }
-  attachHeaderSortListeners();
+  });
   if (sortState.key){
-    headerCells().forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === sortState.key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
+    headerCells.forEach(h => h.setAttribute('data-sort-indicator', h.getAttribute('data-key') === sortState.key ? (sortState.dir === 1 ? '▲' : '▼') : ''));
     sortTableByKey(sortState.key, sortState.dir);
+  }
+
+  function getColumnIndexByKey(key){
+    const heads = qsa('thead th');
+    for (let i = 0; i < heads.length; i++){ if (heads[i].getAttribute('data-key') === key) return i; }
+    return -1;
   }
   function sortTableByKey(key, dir){
     const idx = getColumnIndexByKey(key);
@@ -282,22 +298,19 @@
   }
   function getCellComparable(tr, idx, key){
     let val = tr.children[idx]?.textContent?.trim() ?? '';
-    if (key === 'energy'){
-      const n = parseFloat(val);
-      return isNaN(n) ? -Infinity : n;
-    }
+    if (key === 'energy'){ const n = parseFloat(val); return isNaN(n) ? -Infinity : n; }
+    if (key === 'minimal'){ return val.toLowerCase().includes('yes') ? 1 : 0; }
     return val.toLowerCase();
   }
 
-  /* ---- CSV Import/Export/Paste ---- */
+  /* CSV Import/Export + Paste */
   exportBtn.addEventListener('click', () => {
     const rows = qsa('#tracks tbody tr');
-    const currentHeaders = qsa('#tracks thead th').map(th => th.textContent.trim());
     const lines = [];
-    lines.push(currentHeaders.join(','));
+    lines.push(CSV_HEADERS.join(','));
     rows.forEach(tr => {
-      const cells = Array.from(tr.children);
-      const rowVals = cells.map(td => (td?.textContent ?? '').trim());
+      const cells = qsa('td', tr);
+      const rowVals = CSV_HEADERS.map((h, i) => (cells[i]?.textContent ?? '').trim());
       lines.push(rowVals.map(csvEscape).join(','));
     });
     const blob = new Blob([lines.join('\r\n')], {type: 'text/csv;charset=utf-8;'});
@@ -307,26 +320,23 @@
   });
   csvInput.addEventListener('change', async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text(); const data = parseCSV(text); if (!data.length) return;
+    const text = await file.text();
+    const data = parseCSV(text); if (!data.length) return;
     const header = data[0].map(s => s.trim());
-    const expected = CSV_HEADERS;
-    const valid = expected.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
+    const valid = CSV_HEADERS.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
     const startIdx = valid ? 1 : 0;
     loadRowsFromCSVArray(data.slice(startIdx));
-    applySavedColumnOrder();
     csvInput.value = '';
   });
-  pasteBtn.addEventListener('click', () => {
-    const text = prompt('Paste CSV here (first row should be headers).'); if (!text) return;
-    try {
+  pasteBtn.addEventListener('click', async () => {
+    const text = prompt('Paste CSV here (first row must be headers):'); if (!text) return;
+    try{
       const data = parseCSV(text); if (!data.length) throw new Error('No rows detected');
-      const header = data[0].map(s => s.trim()); const expected = CSV_HEADERS;
-      const valid = expected.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
+      const header = data[0].map(s => s.trim());
+      const valid = CSV_HEADERS.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
       const startIdx = valid ? 1 : 0;
-      loadRowsFromCSVArray(data.slice(startIdx));
-      applySavedColumnOrder();
-      setStatus('Pasted CSV loaded ✓', false);
-    } catch (e){ setStatus('Paste failed: ' + (e.message || e), true); }
+      loadRowsFromCSVArray(data.slice(startIdx)); setStatus('Pasted CSV loaded ✓', false);
+    } catch(e){ setStatus('Paste failed: ' + (e.message || e), true); }
   });
 
   function loadRowsFromCSVArray(rows){
@@ -338,8 +348,8 @@
     });
     applyFilters();
     if (sortState.key) sortTableByKey(sortState.key, sortState.dir);
+    updateMinimalFlags();
   }
-
   function addRow({name, artist, energy, stage, playlist, other, mood}){
     const tr = document.createElement('tr');
     tr.setAttribute('data-energy', String(energy || ''));
@@ -353,14 +363,11 @@
       <td><span class="pill">${escapeHTML(playlist)}</span></td>
       <td class="muted">${escapeHTML(other)}</td>
       <td class="muted mood-cell">${escapeHTML(mood)}</td>
+      <td class="muted minimal-flag"></td>
     `;
     rowsContainer.appendChild(tr);
-    // Reorder to current column order
-    reorderRowToCurrent(tr);
-    // Respect mood visibility
-    const idx = getColumnIndexByKey('mood'); const td = tr.children[idx]; if (td) td.style.display = toggleMood.checked ? '' : 'none';
+    updateMinimalFlags();
   }
-
   function csvEscape(s){ s = String(s ?? ''); if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"'; return s; }
   function parseCSV(text){
     const rows = []; let i = 0, field = '', row = [], inQuotes = false;
@@ -380,79 +387,59 @@
     row.push(field); rows.push(row);
     return rows.filter(r => r.some(cell => String(cell).trim().length));
   }
-  function escapeHTML(str){ const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}; return String(str).replace(/[&<>"']/g, ch => map[ch]); }
+  function escapeHTML(str){
+    const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'};
+    return String(str).replace(/[&<>"']/g, ch => map[ch]);
+  }
 
-  /* ---- Load from URL ---- */
+  /* Minimal flag computation */
+  function updateMinimalFlags(){
+    const idx = getColumnIndexByKey('minimal'); if (idx === -1) return;
+    qsa('#tracks tbody tr').forEach(tr => {
+      const moods = (tr.getAttribute('data-moods') || '').toLowerCase();
+      const isMin = moods.includes('minimal');
+      const td = tr.children[idx] || tr.appendChild(document.createElement('td'));
+      td.className = 'muted minimal-flag';
+      td.innerHTML = isMin ? '<span class="pill">Yes</span>' : '<span class="pill">No</span>';
+    });
+  }
+
+  /* Load from URL */
   const LS = window.localStorage;
-  try { const savedUrl = LS.getItem(LS_KEY_URL) || ''; if (savedUrl) dataUrlInput.value = savedUrl; if (savedUrl) fetchCSV(savedUrl); } catch(e){ console.warn('localStorage not available', e); }
+  try { const savedUrl = LS.getItem(LS_KEY_URL) || ''; if (savedUrl) dataUrlInput.value = savedUrl; if (savedUrl) fetchCSV(savedUrl); }
+  catch(e){ console.warn('localStorage not available', e); }
   saveUrlBtn.addEventListener('click', () => {
-    const url = dataUrlInput.value.trim(); if (!url) return setStatus('Enter a CSV URL first', true);
+    const url = dataUrlInput.value.trim();
+    if (!url) return setStatus('Enter a CSV URL first', true);
     try { LS.setItem(LS_KEY_URL, url); setStatus('URL saved', false); } catch(e){ setStatus('Could not save URL (storage blocked)', true); }
   });
   loadUrlBtn.addEventListener('click', () => {
-    const url = (dataUrlInput.value || '').trim() || (LS.getItem(LS_KEY_URL) || ''); if (!url) return setStatus('No URL set', true);
+    const url = (dataUrlInput.value || '').trim() || (LS.getItem(LS_KEY_URL) || '');
+    if (!url) return setStatus('No URL set', true);
     fetchCSV(url);
   });
   async function fetchCSV(url){
     try {
       setStatus('Loading…');
-      const resp = await fetch(url, { cache: 'no-store' }); if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const text = await resp.text(); const data = parseCSV(text); if (!data.length) throw new Error('No data');
-      const header = data[0].map(s => s.trim()); const expected = CSV_HEADERS;
-      const valid = expected.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const text = await resp.text();
+      const data = parseCSV(text);
+      if (!data.length) throw new Error('No data');
+      const header = data[0].map(s => s.trim());
+      const valid = CSV_HEADERS.every((h, i) => (header[i] || '').toLowerCase() === h.toLowerCase());
       const startIdx = valid ? 1 : 0;
       loadRowsFromCSVArray(data.slice(startIdx));
-      applySavedColumnOrder();
       setStatus('Loaded ✓', false);
-    } catch (e){ console.error(e); setStatus('Load failed: ' + (e.message || e), true); }
+      updateMinimalFlags();
+    } catch (e){
+      console.error(e); setStatus('Load failed: ' + (e.message || e), true);
+    }
   }
   function setStatus(msg, isError){ statusEl.textContent = msg || ''; statusEl.className = 'status ' + (isError ? 'err' : 'ok'); }
 
-  /* ---- Column Reorder (drag & drop + persist) ---- */
-  function headerRow(){ return qs('#tracks thead tr'); }
-  function headerKeys(){ return Array.from(headerRow().children).map(th => th.getAttribute('data-key')); }
-  function saveColumnOrder(keys){ try { localStorage.setItem(LS_KEY_COL_ORDER, JSON.stringify(keys)); } catch(e){} }
-  function loadColumnOrder(){ try { return JSON.parse(localStorage.getItem(LS_KEY_COL_ORDER) || 'null'); } catch(e){ return null; } }
-  function setColumnOrder(keys){
-    const current = headerKeys(); if (!keys || keys.join(',') === current.join(',')) return;
-    // Reorder header
-    const hr = headerRow(); const thMap = {}; Array.from(hr.children).forEach(th => thMap[th.getAttribute('data-key')] = th);
-    keys.forEach(k => hr.appendChild(thMap[k]));
-    // Reorder body rows
-    qsa('#tracks tbody tr').forEach(tr => {
-      const tds = Array.from(tr.children);
-      const map = {}; current.forEach((k, i) => map[k] = tds[i]);
-      keys.forEach(k => tr.appendChild(map[k]));
-    });
-    attachHeaderSortListeners();
-    attachDragListeners();
-    setMoodVisibility(toggleMood.checked);
-  }
-  function applySavedColumnOrder(){ const saved = loadColumnOrder(); if (saved) setColumnOrder(saved); }
-  function reorderRowToCurrent(tr){
-    const keys = headerKeys();
-    // Map from default order to positions
-    const mapIndex = {'name':0,'artist':1,'energy':2,'stage':3,'playlist':4,'other':5,'mood':6};
-    const tds = Array.from(tr.children); const out = []; keys.forEach(k => out.push(tds[mapIndex[k]])); out.forEach(td => tr.appendChild(td));
-  }
-  function attachDragListeners(){
-    qsa('#tracks thead th').forEach(th => {
-      th.ondragstart = (e)=>{ e.dataTransfer.setData('text/plain', th.getAttribute('data-key')); e.dataTransfer.effectAllowed = 'move'; };
-      th.ondragover = (e)=>{ e.preventDefault(); th.style.outline='1px dashed #2d3446'; };
-      th.ondragleave = ()=>{ th.style.outline=''; };
-      th.ondrop = (e)=>{
-        e.preventDefault(); th.style.outline='';
-        const dragKey = e.dataTransfer.getData('text/plain'); const targetKey = th.getAttribute('data-key');
-        if (!dragKey || dragKey === targetKey) return;
-        const order = headerKeys().filter(k => k !== dragKey);
-        const idx = order.indexOf(targetKey); order.splice(idx,0,dragKey);
-        setColumnOrder(order); saveColumnOrder(order);
-      };
-    });
-  }
-  attachDragListeners();
-  applySavedColumnOrder();
-})();
-</script>
+  /* Initial compute */
+  updateMinimalFlags();
+})();</script>
 </body>
 </html>
